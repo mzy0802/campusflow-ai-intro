@@ -4,40 +4,83 @@
 
 打开导航后搜索并确认起点和终点。页面按预计耗时列出可行的出行方式。点击自行车或电动车，可以查看附近停车区、余位和停车后的步行路线。地图交通状态、停车余位和小白班次随演示时间变化。
 
-## 本机运行
+## 下载项目
 
-准备 Python 3.10 或更新版本以及 Node.js 22.12 或更新版本。建议使用 Python 3.12。
+准备 Python 3.10 或更新版本以及 Node.js 22.12 或更新版本。建议使用 Python 3.12。可以在 GitHub 点击 **Code → Download ZIP** 后解压，也可以使用 Git 克隆。
 
-在项目根目录启动后端。
-
-```text
-python -m pip install -r backend/requirements.txt
-python run_backend.py
+```sh
+git clone https://github.com/mzy0802/campusflow-ai-intro.git
+cd campusflow-ai-intro
 ```
 
-另开终端启动前端。
+项目根目录是包含 `run_backend.py` 和 `.env.example` 的那一层。
 
-```text
+## 配置畅课里收到的 API
+
+如果收到的是已填好的 `.env` 文件，将它放在项目根目录，文件名保持为 `.env`。
+
+如果收到的是 **API 密钥和对应的接口基础地址**，将 `.env.example` 复制为 `.env`，用文本编辑器填写。以下是使用同一百炼工作空间体验云端指路和语音转写的示例。请把尖括号里的内容换成畅课消息里的值。
+
+```dotenv
+NAV_AI_MODEL=qwen-flash
+NAV_AI_API_KEY=<API 密钥>
+NAV_AI_BASE_URL=<OpenAI 兼容接口基础地址>
+
+NAV_ASR_MODEL=qwen-audio-3.1-asr-flash
+NAV_ASR_API_KEY=<API 密钥>
+NAV_ASR_BASE_URL=<对应的百炼接口基础地址>
+```
+
+如果畅课消息给的是同一工作空间的兼容接口基础地址，以上两个 `BASE_URL` 可以填同一个值。语音模块会从这个地址取出域名，调用该工作空间的 DashScope 接口。基础地址通常以 `/compatible-mode/v1` 结尾。填写时去掉末尾的 `/chat/completions`。修改配置后，重启后端再刷新网页。
+
+体验图像识别时，还需填写以下三项。畅课提供的密钥和地址若已开通视觉模型，可以填入同一组值。
+
+```dotenv
+QWEN_VISION_MODEL=qwen3-vl-plus
+DASHSCOPE_API_KEY=<已开通视觉模型的 API 密钥>
+QWEN_VISION_BASE_URL=<对应的 OpenAI 兼容接口基础地址>
+```
+
+没有 `.env` 时，仍可体验地图、路线规划、停车推荐和内置规则指路。
+
+## 启动前后端
+
+在项目根目录打开终端，执行与系统对应的命令。
+
+**Windows PowerShell**
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
+.\.venv\Scripts\python.exe run_backend.py
+```
+
+**macOS / Linux**
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements.txt
+.venv/bin/python run_backend.py
+```
+
+保持后端窗口运行。另开一个终端，从项目根目录启动前端。
+
+```sh
 cd frontend
 npm ci
 npm run dev -- --port 5174
 ```
 
-打开 [工作台](http://127.0.0.1:5174/)。后端检查地址为 [健康接口](http://127.0.0.1:8000/api/health)。
+在浏览器打开 [工作台](http://127.0.0.1:5174/)。[后端健康接口](http://127.0.0.1:8000/api/health) 返回 `"status":"ok"` 时，说明后端已启动。
 
-可用“鸿翔园6号公寓”至“明远教学楼A栋”体验地点搜索和路线规划。基本查询使用本地路网和演示数据。启动时会为新的本地数据库载入演示公交线路。
+## 体验与检查
 
-## 云端导航和语音配置
+1. **路线规划**。选择起点“鸿翔园6号公寓”和终点“明远教学楼A栋”，点击“查找路线”。选中电动车或自行车后，可切换停车区并查看地图路线。
+2. **云端 AI 指路**。点击“AI 指路”，输入“从鸿翔园6号公寓到明远教学楼A栋”。配置齐全时，后端可调用 `qwen-flash` 处理出行请求。未配置时，页面使用内置规则生成候选。
+3. **云端语音转写**。在“AI 指路”中点击麦克风并允许访问，说完后再点一次停止。确认转写文本后点击发送。[语音配置接口](http://127.0.0.1:8000/api/navigation/asr) 中 `"ready":true` 表示后端已读取云端语音配置。
+4. **图像识别**。配置视觉服务后，打开 [调试页](http://127.0.0.1:5174/debug)，点击“人车识别测试”，上传一张图片查看计数。[视觉配置接口](http://127.0.0.1:8000/api/vision/health) 可检查视觉配置与依赖状态。
 
-将 `.env.example` 复制为项目根目录下的 `.env`，填写对应的密钥和服务地址。
-
-| 功能 | 配置模板中的模型 | 需要填写 |
-| --- | --- | --- |
-| AI 指路 | `qwen-flash` | `NAV_AI_API_KEY` 和 `NAV_AI_BASE_URL`。填写 OpenAI 兼容接口的基础地址。 |
-| 语音转写 | `qwen-audio-3.1-asr-flash` | `NAV_ASR_API_KEY` 和 `NAV_ASR_BASE_URL`。填写支持该模型的 DashScope 地址，应用会传入校园地名热词。 |
-| 图像识别 | `qwen3-vl-plus` | `DASHSCOPE_API_KEY` 和 `QWEN_VISION_BASE_URL`。 |
-
-完整的云端配置由后端读取。教师需要体验云端功能时，可以在本机通过单独提供的 `.env` 启用。
+如果工作台打不开，先确认两个终端都在运行。云端功能报错时，检查文件是否误存为 `.env.txt`，以及密钥、接口地址与模型权限是否属于同一工作空间。
 
 ## 数据和代码
 
